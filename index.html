@@ -58,6 +58,8 @@ input,select{font:inherit;font-size:15px;border:1px solid var(--line);background
 .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
 .note{font-size:13px;color:var(--mute);margin-top:14px}
 .empty{padding:20px 14px;color:var(--mute);text-align:center}
+.wi{width:78px;padding:4px 6px;font-size:14px}
+.row.skip .n{color:var(--mute)}
 @media (max-width:480px){.row{grid-template-columns:auto 1fr auto auto;}.row .w{grid-column:2}.row .chip{grid-column:3}}
 @media (prefers-reduced-motion:reduce){.fill{transition:none}}
 </style>
@@ -114,15 +116,15 @@ function mk(t){return D[t].map(function(r,i){return{id:t+i,n:r[0],w:r[1],b:r[2],
 function items(){if(!S.lists[S.type])S.lists[S.type]=mk(S.type);return S.lists[S.type]}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function kg(g){return (g/1000).toFixed(2).replace(/\.?0+$/,'')+' kg'}
-function bagOf(it){return S.intl?(it.b==='c'||S.kb.indexOf(it.b)>-1?it.b:'k'):'k'}
+function bagOf(it){if(it.b==='x')return 'x';return S.intl?(it.b==='c'||S.kb.indexOf(it.b)>-1?it.b:'k'):'k'}
 function bagsAll(){return S.intl?['c'].concat(S.kb):['k']}
-function nameOf(b){if(b==='c')return '手提上機';if(!S.intl)return '行李';var n=S.kb.indexOf(b)+1;return S.kb.length>1?'託運行李 '+n:'託運行李'}
+function nameOf(b){if(b==='x')return '不需攜帶';if(b==='c')return '手提上機';if(!S.intl)return '行李';var n=S.kb.indexOf(b)+1;return S.kb.length>1?'託運行李 '+n:'託運行李'}
 function render(){
  var tabs=document.getElementById('tabs');
  tabs.innerHTML=Object.keys(TYPES).map(function(k){return '<button class="tab" role="tab" data-t="'+k+'" aria-selected="'+(k===S.type)+'">'+TYPES[k]+'</button>'}).join('');
  document.getElementById('sw').innerHTML='<button data-i="1" aria-pressed="'+S.intl+'">出國（分手提／託運）</button><button data-i="0" aria-pressed="'+!S.intl+'">國內（單一行李）</button>';
- var L=items(),bags=bagsAll(),names={};
- bags.forEach(function(b){names[b]=nameOf(b)});
+ var L=items(),bags=bagsAll(),all=bags.concat(['x']),names={};
+ all.forEach(function(b){names[b]=nameOf(b)});
  document.getElementById('scales').innerHTML=bags.map(function(b){
   var tot=0;L.forEach(function(i){if(bagOf(i)===b)tot+=i.w});
   var lim=S.lim[b]*1000,pct=Math.min(100,tot/lim*100),over=tot>lim;
@@ -131,14 +133,14 @@ function render(){
  }).join('');
  document.getElementById('ab').innerHTML=bags.map(function(b){return '<option value="'+b+'">放進：'+names[b]+'</option>'}).join('');
  var html='';
- bags.forEach(function(b){
+ all.forEach(function(b){
   var g=L.filter(function(i){return bagOf(i)===b});
-  if(S.intl)html+='<div class="grp">'+names[b]+'（'+g.length+' 件）</div>';
-  html+=g.length?g.map(function(i){return '<div class="row'+(i.on?' done':'')+'"><input type="checkbox" data-c="'+i.id+'"'+(i.on?' checked':'')+' aria-label="已打包 '+esc(i.n)+'"><span class="n">'+esc(i.n)+'</span><span class="w">'+i.w+' g</span>'+(S.intl?'<select class="chip" data-mv="'+i.id+'" aria-label="移動 '+esc(i.n)+' 到">'+bags.map(function(x){return '<option value="'+x+'"'+(x===b?' selected':'')+'>'+names[x]+'</option>'}).join('')+'</select>':'')+'<button class="x" data-d="'+i.id+'" aria-label="刪除 '+esc(i.n)+'">×</button></div>'}).join(''):'<div class="empty">這裡還沒有物品，從下方新增。</div>';
+  if(S.intl||b==='x')html+='<div class="grp">'+names[b]+(b==='x'?'・不計入重量':'')+'（'+g.length+' 件）</div>';
+  html+=g.length?g.map(function(i){return '<div class="row'+(i.on?' done':'')+(b==='x'?' skip':'')+'"><input type="checkbox" data-c="'+i.id+'"'+(i.on?' checked':'')+' aria-label="已打包 '+esc(i.n)+'"><span class="n">'+esc(i.n)+'</span><span class="w"><input class="wi" type="number" min="0" step="10" value="'+i.w+'" data-w="'+i.id+'" aria-label="'+esc(i.n)+' 的重量(g)"> g</span>'+(S.intl?'<select class="chip" data-mv="'+i.id+'" aria-label="移動 '+esc(i.n)+' 到">'+all.map(function(x){return '<option value="'+x+'"'+(x===b?' selected':'')+'>'+names[x]+'</option>'}).join('')+'</select>':'')+'<button class="x" data-d="'+i.id+'" aria-label="刪除 '+esc(i.n)+'">×</button></div>'}).join(''):'<div class="empty">'+(b==='x'?'這裡還沒有物品，用物品右邊的選單把不想帶的東西移過來。':'這裡還沒有物品，從下方新增。')+'</div>';
  });
  document.getElementById('list').innerHTML=html;
- var done=L.filter(function(i){return i.on}).length;
- document.getElementById('count').textContent='已打包 '+done+' / '+L.length;
+ var act=L.filter(function(i){return bagOf(i)!=='x'}),done=act.filter(function(i){return i.on}).length;
+ document.getElementById('count').textContent='已打包 '+done+' / '+act.length;
  document.getElementById('addbag').style.display=S.intl?'':'none';
  save();
 }
@@ -156,6 +158,7 @@ document.addEventListener('change',function(e){
  var t=e.target;
  if(t.dataset.c){find(t.dataset.c).on=t.checked;render()}
  else if(t.dataset.mv){find(t.dataset.mv).b=t.value;render()}
+ else if(t.dataset.w){var v=parseFloat(t.value);if(v>=0)find(t.dataset.w).w=v;render()}
  else if(t.dataset.lim){var v=parseFloat(t.value);if(v>0){S.lim[t.dataset.lim]=v;render()}}
 });
 document.getElementById('add').addEventListener('submit',function(e){
