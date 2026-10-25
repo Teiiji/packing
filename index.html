@@ -91,7 +91,8 @@ details .add{margin:10px 0 8px}
 <section id="vGear" hidden>
 <form class="add" id="gaf">
 <input id="gn" required placeholder="新增裝備，例如：水下相機">
-<input id="gw" type="number" min="0" step="10" required placeholder="重量(g)" style="width:100px">
+<input id="gw" type="number" min="0" step="any" required placeholder="重量(g)" style="width:100px">
+<input id="gq" type="number" min="1" step="1" placeholder="數量" style="width:80px">
 <div class="tags" id="gtags" style="width:100%;margin:0"></div>
 <button class="btn" type="submit">加入總清單</button>
 </form>
@@ -127,7 +128,8 @@ var TY={dive:'潛旅',land:'陸上旅遊',camp:'露營',hike:'登山',creek:'溪
 function $(i){return document.getElementById(i)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function uid(){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function kg(g){return (g/1000).toFixed(2).replace(/\.?0+$/,'')+' kg'}
+function kg(g){return String(Math.round(g*10)/10000)+' kg'}
+function gs(g){return (Math.round(g*10)/10)+' g'}
 function seed(){var d=[['面鏡與呼吸管',450,'dive'],['蛙鞋',1800,'dive'],['調節器',2200,'dive'],['換洗衣物',2200,'land,camp,hike'],['盥洗用品',600,'land,camp'],['行動電源',350,'land,camp,hike'],['帳篷',2600,'camp'],['睡袋',1100,'camp'],['登山背包 45L',1500,'hike'],['頭燈',90,'camp,hike,creek'],['溪鞋',900,'creek'],['防水相機',450,'creek,dive']];return{gear:d.map(function(r,i){return{id:'g'+i,n:r[0],w:r[1],t:r[2].split(',')}}),trips:[],cur:null,tab:'trips',gf:'all'}}
 function load(){try{var d=JSON.parse(localStorage.getItem(KEY));return d&&d.gear&&d.trips?d:null}catch(e){return null}}
 var S=load()||seed();
@@ -138,13 +140,13 @@ function wb(t){return t.intl?['c'].concat(t.kb):['k']}
 function bo(t,it){if(it.b==='x')return 'x';return t.intl?(it.b==='c'||t.kb.indexOf(it.b)>-1?it.b:'k'):'k'}
 function nm(t,b){if(b==='x')return '不需攜帶';if(b==='c')return '手提上機';if(!t.intl)return '行李';var n=t.kb.indexOf(b)+1;return t.kb.length>1?'託運行李 '+n:'託運行李'}
 function rows(t){return t.items.map(function(it){return{it:it,g:G(it.g)}}).filter(function(r){return r.g})}
-function tot(t,b){var s=0;rows(t).forEach(function(r){if(bo(t,r.it)===b)s+=r.g.w*r.it.q});return s}
+function tot(t,b){var s=0;rows(t).forEach(function(r){if(bo(t,r.it)===b)s+=r.g.w*r.it.q});return Math.round(s*100)/100}
 function rTrips(){var h=S.trips.map(function(t){var n=rows(t).filter(function(r){return bo(t,r.it)!=='x'}).length,w=0;wb(t).forEach(function(b){w+=tot(t,b)});return '<div class="tc"><button class="tcb" data-open="'+t.id+'"><b>'+esc(t.name)+'</b><span class="w">'+TY[t.type]+'・'+(t.intl?'出國':'國內')+'・'+n+' 件・'+kg(w)+'</span></button><button class="x" data-dt="'+t.id+'" aria-label="刪除行程">×</button></div>'}).join('');$('tlist').innerHTML=h||'<div class="empty">還沒有行程。輸入名稱並選類型，會先帶入你裝備總清單裡該類型的裝備，之後可以自己增減。</div>'}
 function gfilter(f,q){return S.gear.filter(function(g){return(f==='all'||g.t.indexOf(f)>-1)&&g.n.toLowerCase().indexOf(q)>-1})}
 function rGear(){var q=$('gs').value.trim().toLowerCase();
 $('gf').innerHTML=['all'].concat(TK).map(function(k){return '<button class="tab" data-gf="'+k+'" aria-selected="'+(S.gf===k)+'">'+(k==='all'?'全部':TY[k])+'</button>'}).join('');
 var L=gfilter(S.gf,q);
-$('glist').innerHTML=L.length?L.map(function(g){return '<div class="grow"><div class="l1"><input class="gi" value="'+esc(g.n)+'" data-gn="'+g.id+'" aria-label="裝備名稱"><span class="w"><input class="wi" type="number" min="0" step="10" value="'+g.w+'" data-gw="'+g.id+'" aria-label="重量(g)"> g</span><button class="x" data-dg="'+g.id+'" aria-label="刪除 '+esc(g.n)+'">×</button></div><div class="tags">'+TK.map(function(k){return '<button class="chip" data-tg="'+g.id+'|'+k+'" aria-pressed="'+(g.t.indexOf(k)>-1)+'">'+TY[k]+'</button>'}).join('')+'</div></div>'}).join(''):'<div class="empty">沒有符合的裝備。從上方新增。</div>';
+$('glist').innerHTML=L.length?L.map(function(g){return '<div class="grow"><div class="l1"><input class="gi" value="'+esc(g.n)+'" data-gn="'+g.id+'" aria-label="裝備名稱"><span class="w"><input class="wi" type="number" min="0" step="any" value="'+g.w+'" data-gw="'+g.id+'" aria-label="重量(g)"> g</span><span class="w">×<input class="qi" type="number" min="1" step="1" value="'+(g.q||1)+'" data-gq="'+g.id+'" aria-label="預設數量"></span><button class="x" data-dg="'+g.id+'" aria-label="刪除 '+esc(g.n)+'">×</button></div><div class="tags">'+TK.map(function(k){return '<button class="chip" data-tg="'+g.id+'|'+k+'" aria-pressed="'+(g.t.indexOf(k)>-1)+'">'+TY[k]+'</button>'}).join('')+'</div></div>'}).join(''):'<div class="empty">沒有符合的裝備。從上方新增。</div>';
 $('gcount').textContent='總清單共 '+S.gear.length+' 件，合計 '+kg(S.gear.reduce(function(s,g){return s+g.w},0))+'。標上類型的裝備，建立該類型行程時會自動帶入。'}
 function rPick(){var t=T();if(!t)return;var inT={};t.items.forEach(function(i){inT[i.g]=1});var L=gfilter($('pf').value,$('ps').value.trim().toLowerCase());
 $('plist').innerHTML=L.length?L.map(function(g){return '<label class="prow"><input type="checkbox" data-pk="'+g.id+'"'+(inT[g.id]?' checked':'')+'><span class="n">'+esc(g.n)+'</span><span class="w">'+g.w+' g</span></label>'}).join(''):'<div class="empty">沒有符合的裝備。到「裝備總清單」新增。</div>'}
@@ -152,13 +154,13 @@ function rTrip(){var t=T();if(!t)return;$('tname').value=t.name;
 $('sw').innerHTML='<button data-i="1" aria-pressed="'+t.intl+'">出國（分手提／託運）</button><button data-i="0" aria-pressed="'+!t.intl+'">國內（單一行李）</button>';
 $('addbag').hidden=!t.intl;
 var bags=wb(t),all=bags.concat(['x']),R=rows(t);
-$('scales').innerHTML=bags.map(function(b){var w=tot(t,b),L=t.lim[b]||23,lim=L*1000,over=w>lim,pct=Math.min(100,w/lim*100);return '<div class="scale"><div class="top"><span class="name">'+nm(t,b)+(t.intl&&b!=='c'&&b!=='k'?' <button class="x" data-rb="'+b+'" aria-label="移除這個託運行李">×</button>':'')+'</span><span class="num">'+kg(w).replace(' kg','')+'<small> / '+L+' kg</small></span></div><div class="track"><div class="fill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div><div class="msg'+(over?' over':'')+'">'+(over?'超重 '+kg(w-lim)+'，請移出一些物品':'還能再放 '+kg(lim-w))+'</div><label class="lim">限重 <input type="number" min="1" step="0.5" value="'+L+'" data-lim="'+b+'"> kg（依航空公司調整）</label></div>'}).join('');
+$('scales').innerHTML=bags.map(function(b){var w=tot(t,b),L=t.lim[b]||23,lim=L*1000,over=w>lim,pct=Math.min(100,w/lim*100);return '<div class="scale"><div class="top"><span class="name">'+nm(t,b)+(t.intl&&b!=='c'&&b!=='k'?' <button class="x" data-rb="'+b+'" aria-label="移除這個託運行李">×</button>':'')+'</span><span class="num">'+kg(w).replace(' kg','')+'<small> / '+L+' kg</small></span></div><div class="track"><div class="fill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div><div class="msg'+(over?' over':'')+'">'+gs(w)+'・'+(over?'超重 '+kg(w-lim)+'，請移出一些物品':'還能再放 '+kg(lim-w))+'</div><label class="lim">限重 <input type="number" min="1" step="0.5" value="'+L+'" data-lim="'+b+'"> kg（依航空公司調整）</label></div>'}).join('');
 var html='';all.forEach(function(b){var g=R.filter(function(r){return bo(t,r.it)===b});
 if(t.intl||b==='x')html+='<div class="grp">'+nm(t,b)+(b==='x'?'・不計入重量':'')+'（'+g.length+' 件）</div>';
-html+=g.length?g.map(function(r){var it=r.it,gg=r.g;return '<div class="row'+(it.on?' done':'')+(b==='x'?' skip':'')+'"><input type="checkbox" data-c="'+gg.id+'"'+(it.on?' checked':'')+' aria-label="已打包 '+esc(gg.n)+'"><span class="n">'+esc(gg.n)+'</span><span class="w">×<input class="qi" type="number" min="1" step="1" value="'+it.q+'" data-q="'+gg.id+'" aria-label="數量"></span><span class="w"><input class="wi" type="number" min="0" step="10" value="'+gg.w+'" data-gw="'+gg.id+'" aria-label="單件重量(g)"> g</span><select class="chip" data-mv="'+gg.id+'" aria-label="移動 '+esc(gg.n)+' 到">'+all.map(function(x){return '<option value="'+x+'"'+(x===b?' selected':'')+'>'+nm(t,x)+'</option>'}).join('')+'</select><button class="x" data-dx="'+gg.id+'" aria-label="從行程移除 '+esc(gg.n)+'">×</button></div>'}).join(''):'<div class="empty">'+(b==='x'?'不想帶的裝備可用選單移到這裡，不計重量。':'這裡還沒有裝備，用上方「從裝備總清單加入」，或從其他行李移過來。')+'</div>'});
+html+=g.length?g.map(function(r){var it=r.it,gg=r.g;return '<div class="row'+(it.on?' done':'')+(b==='x'?' skip':'')+'"><input type="checkbox" data-c="'+gg.id+'"'+(it.on?' checked':'')+' aria-label="已打包 '+esc(gg.n)+'"><span class="n">'+esc(gg.n)+'</span><span class="w">×<input class="qi" type="number" min="1" step="1" value="'+it.q+'" data-q="'+gg.id+'" aria-label="數量"></span><span class="w">'+gs(gg.w)+(it.q>1?'（共 '+gs(gg.w*it.q)+'）':'')+'</span><select class="chip" data-mv="'+gg.id+'" aria-label="移動 '+esc(gg.n)+' 到">'+all.map(function(x){return '<option value="'+x+'"'+(x===b?' selected':'')+'>'+nm(t,x)+'</option>'}).join('')+'</select><button class="x" data-dx="'+gg.id+'" aria-label="從行程移除 '+esc(gg.n)+'">×</button></div>'}).join(''):'<div class="empty">'+(b==='x'?'不想帶的裝備可用選單移到這裡，不計重量。':'這裡還沒有裝備，用上方「從裝備總清單加入」，或從其他行李移過來。')+'</div>'});
 $('items').innerHTML=html;
 var act=R.filter(function(r){return bo(t,r.it)!=='x'});
-$('icount').textContent='已打包 '+act.filter(function(r){return r.it.on}).length+' / '+act.length+'。單件重量修改後，總清單和其他行程也會一起更新。';
+$('icount').textContent='已打包 '+act.filter(function(r){return r.it.on}).length+' / '+act.length+'。要改重量或預設數量，請到「裝備總清單」。';
 rPick()}
 function render(){if(S.cur&&!T())S.cur=null;var inT=!!T();
 $('n_trips').setAttribute('aria-selected',String(!inT&&S.tab==='trips'));$('n_gear').setAttribute('aria-selected',String(!inT&&S.tab==='gear'));
@@ -182,22 +184,23 @@ document.addEventListener('change',function(e){var t=e.target,d=t.dataset,tr=T()
 if(d.c){itm(tr,d.c).on=t.checked}
 else if(d.q){var q=parseInt(t.value,10);itm(tr,d.q).q=q>0?q:1}
 else if(d.gw){var v=parseFloat(t.value);if(v>=0)G(d.gw).w=v}
+else if(d.gq){var q2=parseInt(t.value,10);G(d.gq).q=q2>0?q2:1}
 else if(d.gn){var n=t.value.trim();if(n)G(d.gn).n=n}
 else if(d.mv){itm(tr,d.mv).b=t.value}
 else if(d.lim){var l=parseFloat(t.value);if(l>0)tr.lim[d.lim]=l}
-else if(d.pk){if(t.checked){if(!itm(tr,d.pk))tr.items.push({g:d.pk,q:1,b:'k',on:false})}else tr.items=tr.items.filter(function(i){return i.g!==d.pk})}
+else if(d.pk){if(t.checked){if(!itm(tr,d.pk))tr.items.push({g:d.pk,q:G(d.pk).q||1,b:'k',on:false})}else tr.items=tr.items.filter(function(i){return i.g!==d.pk})}
 else if(t.id==='tname'){tr.name=t.value.trim()||tr.name}
 else return;
 render()});
 $('addbag').onclick=function(){var t=T(),n=2;while(t.kb.indexOf('k'+n)>-1)n++;var id='k'+n;t.kb.push(id);t.lim[id]=t.lim.k||23;render()};
-$('tf').onsubmit=function(e){e.preventDefault();var ty=$('tp').value,t={id:uid(),name:$('tn').value.trim()||TY[ty]+'行程',type:ty,intl:$('io').value==='1',lim:{c:7,k:23},kb:['k'],items:[]};S.gear.forEach(function(g){if(g.t.indexOf(ty)>-1)t.items.push({g:g.id,q:1,b:'k',on:false})});S.trips.unshift(t);S.cur=t.id;e.target.reset();render()};
-$('gaf').onsubmit=function(e){e.preventDefault();var n=$('gn').value.trim(),w=parseFloat($('gw').value);if(!n||!(w>=0))return;var tg=[].slice.call(document.querySelectorAll('#gtags input:checked')).map(function(i){return i.value});S.gear.unshift({id:uid(),n:n,w:w,t:tg});e.target.reset();render()};
+$('tf').onsubmit=function(e){e.preventDefault();var ty=$('tp').value,t={id:uid(),name:$('tn').value.trim()||TY[ty]+'行程',type:ty,intl:$('io').value==='1',lim:{c:7,k:23},kb:['k'],items:[]};S.gear.forEach(function(g){if(g.t.indexOf(ty)>-1)t.items.push({g:g.id,q:g.q||1,b:'k',on:false})});S.trips.unshift(t);S.cur=t.id;e.target.reset();render()};
+$('gaf').onsubmit=function(e){e.preventDefault();var n=$('gn').value.trim(),w=parseFloat($('gw').value);if(!n||!(w>=0))return;var tg=[].slice.call(document.querySelectorAll('#gtags input:checked')).map(function(i){return i.value});S.gear.unshift({id:uid(),n:n,w:w,q:parseInt($('gq').value,10)>0?parseInt($('gq').value,10):1,t:tg});e.target.reset();render()};
 $('gs').oninput=rGear;$('ps').oninput=rPick;$('pf').onchange=rPick;
-$('pall').onclick=function(){var t=T();gfilter($('pf').value,$('ps').value.trim().toLowerCase()).forEach(function(g){if(!itm(t,g.id))t.items.push({g:g.id,q:1,b:'k',on:false})});render()};
+$('pall').onclick=function(){var t=T();gfilter($('pf').value,$('ps').value.trim().toLowerCase()).forEach(function(g){if(!itm(t,g.id))t.items.push({g:g.id,q:g.q||1,b:'k',on:false})});render()};
 function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function dec(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return JSON.parse(decodeURIComponent(escape(atob(s))))}
 function gname(n){return S.gear.filter(function(x){return x.n===n})[0]}
-function mergeIn(d){var map={};d.gear.forEach(function(g){var e=gname(g.n);if(!e){e={id:uid(),n:g.n,w:g.w,t:g.t||[]};S.gear.push(e)}map[g.id]=e.id});var t=JSON.parse(JSON.stringify(d.trip));t.id=uid();t.items=t.items.filter(function(i){return map[i.g]}).map(function(i){i.g=map[i.g];return i});S.trips.unshift(t);S.cur=t.id;S.tab='trips';render()}
+function mergeIn(d){var map={};d.gear.forEach(function(g){var e=gname(g.n);if(!e){e={id:uid(),n:g.n,w:g.w,q:g.q||1,t:g.t||[]};S.gear.push(e)}map[g.id]=e.id});var t=JSON.parse(JSON.stringify(d.trip));t.id=uid();t.items=t.items.filter(function(i){return map[i.g]}).map(function(i){i.g=map[i.g];return i});S.trips.unshift(t);S.cur=t.id;S.tab='trips';render()}
 $('shr').onclick=function(){var t=T(),ids={};t.items.forEach(function(i){ids[i.g]=1});var u=location.href.split('#')[0]+'#t='+enc({trip:t,gear:S.gear.filter(function(g){return ids[g.id]})});if(navigator.share){navigator.share({title:t.name,url:u}).catch(function(){})}else if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){flash('已複製分享連結')},function(){flash(u)})}else flash(u)};
 $('exp').onclick=function(){var b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='packing-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);flash('已匯出備份檔 packing-backup.json')};
 $('imp').onclick=function(){$('impf').click()};
