@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>行李秤：打包清單與重量計算</title>
+<title>行李秤：裝備總清單與打包重量</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1B7F8F">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,176 +11,205 @@
 <link rel="icon" href="icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-:root{--bg:#EDF2F4;--panel:#FFFFFF;--ink:#12303B;--mute:#5E7480;--line:#D3DEE3;--accent:#1B7F8F;--accent-ink:#FFFFFF;--bar:#C9DADF;--over:#C73E54;--ok:#2F8F5B;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1C22;--panel:#16282F;--ink:#E4EEF1;--mute:#8FA6B0;--line:#27414A;--accent:#4FB7C7;--accent-ink:#0E1C22;--bar:#264049;--over:#F0728A;--ok:#5BC48A}}
-:root[data-theme="dark"]{--bg:#0E1C22;--panel:#16282F;--ink:#E4EEF1;--mute:#8FA6B0;--line:#27414A;--accent:#4FB7C7;--accent-ink:#0E1C22;--bar:#264049;--over:#F0728A;--ok:#5BC48A}
+:root{--bg:#EDF2F4;--panel:#FFFFFF;--ink:#12303B;--mute:#5E7480;--line:#D3DEE3;--accent:#1B7F8F;--accent-ink:#FFFFFF;--bar:#C9DADF;--over:#C73E54;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1C22;--panel:#16282F;--ink:#E4EEF1;--mute:#8FA6B0;--line:#27414A;--accent:#4FB7C7;--accent-ink:#0E1C22;--bar:#264049;--over:#F0728A}}
 *{box-sizing:border-box}
-html{color-scheme:light dark;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{color-scheme:light dark}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Noto Sans TC",system-ui,sans-serif}
 main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
-h1{font-size:22px;margin:4px 0 2px;font-weight:700}
-.sub{color:var(--mute);margin:0 0 18px;font-size:14px}
+h1{font-size:22px;margin:4px 0 12px}
+h2{font-size:17px;margin:0}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
 .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 16px;font:inherit;font-size:15px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
-.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.trip{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px}
-.sw{display:flex;gap:4px;background:var(--bg);border-radius:8px;padding:3px}
-.sw button{border:0;background:transparent;color:var(--mute);padding:6px 12px;border-radius:6px;font:inherit;font-size:14px;cursor:pointer}
-.sw button[aria-pressed="true"]{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:0 0 0 1px var(--line)}
-.scales{display:grid;gap:10px;margin-bottom:18px}
-.scale{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
-.scale .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
-.scale .name{font-weight:700}
-.scale .num{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
-.scale .num small{font-size:14px;font-weight:400;color:var(--mute)}
-.track{position:relative;height:14px;background:var(--bar);border-radius:7px;margin:10px 0 6px;overflow:hidden}
-.fill{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:7px;transition:width .25s}
-.fill.over{background:var(--over)}
-.msg{font-size:14px;color:var(--mute)}
-.msg.over{color:var(--over);font-weight:700}
-.lim{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);margin-top:6px}
-.lim input{width:64px;padding:3px 6px}
-input,select{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 10px}
-.list{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.grp{padding:8px 14px;background:var(--bg);color:var(--mute);font-size:13px;font-weight:700;border-bottom:1px solid var(--line)}
-.row{display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}
-.row input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
-.row.done .n{color:var(--mute);text-decoration:line-through}
-.w{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px}
-.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:3px 8px;font:inherit;font-size:13px;cursor:pointer}
-.x{border:0;background:transparent;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
-.add{display:grid;grid-template-columns:1fr 90px auto;gap:8px;margin-top:14px}
-.add select{grid-column:1/3}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 10px;min-width:0}
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--mute);font-weight:400;border:1px solid var(--line)}
-.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
-.note{font-size:13px;color:var(--mute);margin-top:14px}
-.empty{padding:20px 14px;color:var(--mute);text-align:center}
-.wi{width:78px;padding:4px 6px;font-size:14px}
+.add{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.add input[type=text],.add input:not([type]){flex:1 1 180px}
+.list{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.grp{padding:8px 14px;background:var(--bg);color:var(--mute);font-size:13px;font-weight:700;border-bottom:1px solid var(--line)}
+.row,.prow,.grow{padding:10px 14px;border-bottom:1px solid var(--line)}
+.row:last-child,.prow:last-child,.grow:last-child{border-bottom:0}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.row .n,.prow .n{flex:1 1 140px}
+.row input[type=checkbox],.prow input{width:20px;height:20px;accent-color:var(--accent)}
+.row.done .n{color:var(--mute);text-decoration:line-through}
 .row.skip .n{color:var(--mute)}
-@media (max-width:480px){.row{grid-template-columns:auto 1fr auto auto;}.row .w{grid-column:2}.row .chip{grid-column:3}}
+.prow{display:flex;gap:10px;align-items:center;cursor:pointer}
+.w{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px}
+.wi{width:78px;padding:4px 6px;font-size:14px}.qi{width:56px;padding:4px 6px;font-size:14px}
+.l1{display:flex;gap:8px;align-items:center}.gi{flex:1}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:3px 8px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+label.chip input{margin-right:4px}
+.x{border:0;background:transparent;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
+.tc{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;padding-right:6px}
+.tcb{flex:1;text-align:left;background:none;border:0;color:var(--ink);font:inherit;padding:12px 14px;cursor:pointer;display:grid;gap:2px}
+.sw{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:14px;width:fit-content}
+.sw button{border:0;background:transparent;color:var(--mute);padding:6px 12px;border-radius:6px;font:inherit;font-size:14px;cursor:pointer}
+.sw button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.scales{display:grid;gap:10px;margin-bottom:12px}
+.scale{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.name{font-weight:700}
+.num{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.num small{font-size:14px;font-weight:400;color:var(--mute)}
+.track{height:14px;background:var(--bar);border-radius:7px;margin:10px 0 6px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:7px;transition:width .25s}.fill.over{background:var(--over)}
+.msg{font-size:14px;color:var(--mute)}.msg.over{color:var(--over);font-weight:700}
+.lim{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);margin-top:6px}.lim input{width:64px;padding:3px 6px}
+.empty{padding:20px 14px;color:var(--mute);text-align:center}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:14px 0;padding:10px 14px}
+summary{cursor:pointer;font-weight:700}
+details .add{margin:10px 0 8px}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.bar input{flex:1;font-weight:700;font-size:17px}
+.note{font-size:13px;color:var(--mute);margin-top:14px}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+[hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.fill{transition:none}}
 </style>
 </head>
 <body>
 <main>
 <h1>行李秤</h1>
-<p class="sub">依旅行類型打包，邊放邊秤，出發前就知道會不會超重。</p>
-<div class="tabs" id="tabs" role="tablist"></div>
-<div class="trip">
-  <span>這趟是</span>
-  <div class="sw" id="sw"></div>
-</div>
-<div class="scales" id="scales"></div>
-<button class="btn ghost" id="addbag" type="button" style="margin:-6px 0 18px">＋ 新增託運行李</button>
-<div class="list" id="list"></div>
-<form class="add" id="add">
-  <input id="an" placeholder="新增物品，例如：水下相機" required>
-  <input id="aw" type="number" min="0" step="10" placeholder="重量(g)" required>
-  <button class="btn" type="submit">加入</button>
-  <select id="ab" aria-label="放進哪個行李"></select>
+<div class="tabs"><button class="tab" id="n_trips" data-tab="trips">行程</button><button class="tab" id="n_gear" data-tab="gear">裝備總清單</button></div>
+
+<section id="vTrips">
+<form class="add" id="tf">
+<input id="tn" placeholder="新行程名稱，例如：綠島潛旅">
+<select id="tp" aria-label="旅行類型"></select>
+<select id="io" aria-label="國內或出國"><option value="1">出國</option><option value="0">國內</option></select>
+<button class="btn" type="submit">建立行程</button>
 </form>
+<div id="tlist"></div>
+</section>
+
+<section id="vGear" hidden>
+<form class="add" id="gaf">
+<input id="gn" required placeholder="新增裝備，例如：水下相機">
+<input id="gw" type="number" min="0" step="10" required placeholder="重量(g)" style="width:100px">
+<div class="tags" id="gtags" style="width:100%;margin:0"></div>
+<button class="btn" type="submit">加入總清單</button>
+</form>
+<div class="tabs" id="gf"></div>
+<input id="gs" placeholder="搜尋裝備" style="width:100%;margin-bottom:10px">
+<div class="list" id="glist"></div>
+<p class="note" id="gcount"></p>
+</section>
+
+<section id="vTrip" hidden>
+<div class="bar"><button class="btn ghost" data-back="1" type="button">‹ 返回</button><input id="tname" aria-label="行程名稱"></div>
+<div class="sw" id="sw"></div>
+<div class="scales" id="scales"></div>
+<button class="btn ghost" id="addbag" type="button" style="margin-bottom:14px">＋ 新增託運行李</button>
+<details id="pk"><summary>從裝備總清單加入</summary>
+<div class="add"><select id="pf" aria-label="篩選類型"></select><input id="ps" placeholder="搜尋裝備"><button class="btn ghost" id="pall" type="button">加入目前篩選的全部</button></div>
+<div class="list" id="plist"></div>
+</details>
+<div class="list" id="items"></div>
+<p class="note" id="icount"></p>
+<div class="foot"><button class="btn ghost" id="shr" type="button">分享這個行程連結</button></div>
+</section>
+
 <div class="foot">
-  <button class="btn ghost" id="reset" type="button">還原這個類型的預設清單</button>
-  <span class="w"><span id="sync">資料存在這台裝置</span>　<span id="count"></span></span>
-</div>
-<div class="foot" style="justify-content:flex-start">
 <button class="btn ghost" id="exp" type="button">匯出備份</button>
 <button class="btn ghost" id="imp" type="button">匯入備份</button>
-<button class="btn ghost" id="shr" type="button">分享我的清單連結</button>
 <input type="file" id="impf" accept="application/json,.json" hidden>
 </div>
-<p class="note" id="tmsg">清單存在這台裝置上，不需要任何帳號。換手機時，在舊手機按「匯出備份」，新手機按「匯入備份」；或用「分享我的清單連結」傳給自己或朋友，對方打開後可選擇匯入，之後各自修改，互不影響。</p>
+<p class="note" id="tmsg">所有資料存在這台裝置上，不需要帳號。換手機時用「匯出備份」和「匯入備份」搬過去。</p>
 </main>
 <script>
-var TYPES={dive:'潛旅',land:'陸上旅遊',camp:'露營',hike:'登山',creek:'溪拍'};
-var D={
-dive:[['面鏡與呼吸管',450,'c'],['蛙鞋',1800,'k'],['潛水電腦錶',150,'c'],['3mm 防寒衣',1500,'k'],['調節器',2200,'c'],['BCD 浮力背心',2800,'k'],['防水袋',200,'k'],['潛水日誌與證照',80,'c']],
-land:[['換洗衣物（5天）',2200,'k'],['盥洗用品',600,'k'],['護照與證件',100,'c'],['手機與充電器',500,'c'],['行動電源',350,'c'],['轉接插頭',120,'c'],['薄外套',450,'c'],['常備藥品',200,'c']],
-camp:[['帳篷',2600,'k'],['睡袋',1100,'k'],['睡墊',600,'k'],['爐頭與瓦斯',900,'k'],['鍋具組',700,'k'],['頭燈',90,'c'],['折疊椅',1100,'k'],['垃圾袋與濕紙巾',150,'k']],
-hike:[['登山背包 45L',1500,'k'],['雨衣',350,'c'],['登山杖',480,'k'],['頭燈與備用電池',150,'c'],['急救包',300,'c'],['行動糧',600,'c'],['保暖層',500,'c'],['水袋 2L',250,'c']],
-creek:[['溪鞋',900,'k'],['防水相機',450,'c'],['相機防水袋',250,'c'],['快乾衣褲',500,'k'],['頭盔',380,'k'],['攀岩繩索與扁帶',1200,'k'],['備用電池與記憶卡',120,'c'],['浮力扣環包',200,'c']]
-};
-var LIM={c:7,k:23};
-var S=load()||{type:'dive',intl:true,lim:{c:7,k:23},lists:{},kb:['k']};
-if(!S.kb)S.kb=['k'];
-var T0=S.t||0;
-function load(){try{return JSON.parse(localStorage.getItem('packapp'))}catch(e){return null}}
-var cloud=null,tm=null,busy=false,again=false;
-function sync(t){var e=document.getElementById('sync');if(e)e.textContent=t}
-function push(){if(busy){again=true;return}busy=true;cloud.set(JSON.parse(JSON.stringify(S))).then(function(){sync('已同步到你的帳號')},function(){sync('同步失敗，目前只存在此瀏覽器')}).then(function(){busy=false;if(again){again=false;push()}})}
-function save(){S.t=Date.now();try{localStorage.setItem('packapp',JSON.stringify(S))}catch(e){}if(cloud){clearTimeout(tm);tm=setTimeout(push,800)}}
-function mk(t){return D[t].map(function(r,i){return{id:t+i,n:r[0],w:r[1],b:r[2],on:false}})}
-function items(){if(!S.lists[S.type])S.lists[S.type]=mk(S.type);return S.lists[S.type]}
+var TY={dive:'潛旅',land:'陸上旅遊',camp:'露營',hike:'登山',creek:'溪拍'},TK=Object.keys(TY),KEY='packapp2';
+function $(i){return document.getElementById(i)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function uid(){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function kg(g){return (g/1000).toFixed(2).replace(/\.?0+$/,'')+' kg'}
-function bagOf(it){if(it.b==='x')return 'x';return S.intl?(it.b==='c'||S.kb.indexOf(it.b)>-1?it.b:'k'):'k'}
-function bagsAll(){return S.intl?['c'].concat(S.kb):['k']}
-function nameOf(b){if(b==='x')return '不需攜帶';if(b==='c')return '手提上機';if(!S.intl)return '行李';var n=S.kb.indexOf(b)+1;return S.kb.length>1?'託運行李 '+n:'託運行李'}
-function render(){
- var tabs=document.getElementById('tabs');
- tabs.innerHTML=Object.keys(TYPES).map(function(k){return '<button class="tab" role="tab" data-t="'+k+'" aria-selected="'+(k===S.type)+'">'+TYPES[k]+'</button>'}).join('');
- document.getElementById('sw').innerHTML='<button data-i="1" aria-pressed="'+S.intl+'">出國（分手提／託運）</button><button data-i="0" aria-pressed="'+!S.intl+'">國內（單一行李）</button>';
- var L=items(),bags=bagsAll(),all=bags.concat(['x']),names={};
- all.forEach(function(b){names[b]=nameOf(b)});
- document.getElementById('scales').innerHTML=bags.map(function(b){
-  var tot=0;L.forEach(function(i){if(bagOf(i)===b)tot+=i.w});
-  var lim=S.lim[b]*1000,pct=Math.min(100,tot/lim*100),over=tot>lim;
-  var msg=over?'超重 '+kg(tot-lim)+'，請移出一些物品':'還能再放 '+kg(lim-tot);
-  return '<div class="scale"><div class="top"><span class="name">'+names[b]+(S.intl&&b!=='c'&&b!=='k'?' <button class="x" data-rb="'+b+'" aria-label="移除這個託運行李">×</button>':'')+'</span><span class="num">'+kg(tot).replace(' kg','')+'<small> / '+S.lim[b]+' kg</small></span></div><div class="track"><div class="fill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div><div class="msg'+(over?' over':'')+'">'+msg+'</div><label class="lim">限重 <input type="number" min="1" step="0.5" value="'+S.lim[b]+'" data-lim="'+b+'"> kg（依航空公司調整）</label></div>';
- }).join('');
- document.getElementById('ab').innerHTML=bags.map(function(b){return '<option value="'+b+'">放進：'+names[b]+'</option>'}).join('');
- var html='';
- all.forEach(function(b){
-  var g=L.filter(function(i){return bagOf(i)===b});
-  if(S.intl||b==='x')html+='<div class="grp">'+names[b]+(b==='x'?'・不計入重量':'')+'（'+g.length+' 件）</div>';
-  html+=g.length?g.map(function(i){return '<div class="row'+(i.on?' done':'')+(b==='x'?' skip':'')+'"><input type="checkbox" data-c="'+i.id+'"'+(i.on?' checked':'')+' aria-label="已打包 '+esc(i.n)+'"><span class="n">'+esc(i.n)+'</span><span class="w"><input class="wi" type="number" min="0" step="10" value="'+i.w+'" data-w="'+i.id+'" aria-label="'+esc(i.n)+' 的重量(g)"> g</span>'+(S.intl?'<select class="chip" data-mv="'+i.id+'" aria-label="移動 '+esc(i.n)+' 到">'+all.map(function(x){return '<option value="'+x+'"'+(x===b?' selected':'')+'>'+names[x]+'</option>'}).join('')+'</select>':'')+'<button class="x" data-d="'+i.id+'" aria-label="刪除 '+esc(i.n)+'">×</button></div>'}).join(''):'<div class="empty">'+(b==='x'?'這裡還沒有物品，用物品右邊的選單把不想帶的東西移過來。':'這裡還沒有物品，從下方新增。')+'</div>';
- });
- document.getElementById('list').innerHTML=html;
- var act=L.filter(function(i){return bagOf(i)!=='x'}),done=act.filter(function(i){return i.on}).length;
- document.getElementById('count').textContent='已打包 '+done+' / '+act.length;
- document.getElementById('addbag').style.display=S.intl?'':'none';
- save();
-}
-function find(id){return items().filter(function(i){return i.id===id})[0]}
-document.addEventListener('click',function(e){
- var t=e.target.closest('[data-t],[data-i],[data-m],[data-d],[data-rb]');if(!t)return;
- if(t.dataset.t){S.type=t.dataset.t}
- else if(t.dataset.i!==undefined){S.intl=t.dataset.i==='1'}
- else if(t.dataset.m){var i=find(t.dataset.m),bl=bagsAll();i.b=bl[(bl.indexOf(bagOf(i))+1)%bl.length]}
- else if(t.dataset.d){S.lists[S.type]=items().filter(function(i){return i.id!==t.dataset.d})}
- else if(t.dataset.rb){var r=t.dataset.rb;S.kb=S.kb.filter(function(k){return k!==r});Object.keys(S.lists).forEach(function(k){S.lists[k].forEach(function(i){if(i.b===r)i.b='k'})})}
- render();
-});
-document.addEventListener('change',function(e){
- var t=e.target;
- if(t.dataset.c){find(t.dataset.c).on=t.checked;render()}
- else if(t.dataset.mv){find(t.dataset.mv).b=t.value;render()}
- else if(t.dataset.w){var v=parseFloat(t.value);if(v>=0)find(t.dataset.w).w=v;render()}
- else if(t.dataset.lim){var v=parseFloat(t.value);if(v>0){S.lim[t.dataset.lim]=v;render()}}
-});
-document.getElementById('add').addEventListener('submit',function(e){
- e.preventDefault();
- var n=document.getElementById('an').value.trim(),w=parseFloat(document.getElementById('aw').value);
- if(!n||!(w>=0))return;
- items().push({id:'u'+Date.now(),n:n,w:w,b:document.getElementById('ab').value,on:false});
- e.target.reset();render();
-});
-document.getElementById('reset').addEventListener('click',function(){S.lists[S.type]=mk(S.type);render()});
-document.getElementById('addbag').addEventListener('click',function(){var n=2;while(S.kb.indexOf('k'+n)>-1)n++;var id='k'+n;S.kb.push(id);S.lim[id]=S.lim.k||23;render()});
-render();
-function flash(t){document.getElementById('tmsg').textContent=t}
-function valid(d){return d&&typeof d==='object'&&d.type&&d.lists&&d.lim}
-function apply(d){S=d;if(!S.kb)S.kb=['k'];render()}
-document.getElementById('exp').onclick=function(){var b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='packing-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);flash('已匯出備份檔 packing-backup.json')};
-document.getElementById('imp').onclick=function(){document.getElementById('impf').click()};
-document.getElementById('impf').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!valid(d))throw 0;apply(d);flash('已匯入備份')}catch(x){flash('這個檔案不是有效的備份檔')}};r.readAsText(f);e.target.value=''};
+function seed(){var d=[['面鏡與呼吸管',450,'dive'],['蛙鞋',1800,'dive'],['調節器',2200,'dive'],['換洗衣物',2200,'land,camp,hike'],['盥洗用品',600,'land,camp'],['行動電源',350,'land,camp,hike'],['帳篷',2600,'camp'],['睡袋',1100,'camp'],['登山背包 45L',1500,'hike'],['頭燈',90,'camp,hike,creek'],['溪鞋',900,'creek'],['防水相機',450,'creek,dive']];return{gear:d.map(function(r,i){return{id:'g'+i,n:r[0],w:r[1],t:r[2].split(',')}}),trips:[],cur:null,tab:'trips',gf:'all'}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));return d&&d.gear&&d.trips?d:null}catch(e){return null}}
+var S=load()||seed();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function T(){return S.trips.filter(function(t){return t.id===S.cur})[0]}
+function G(id){return S.gear.filter(function(g){return g.id===id})[0]}
+function wb(t){return t.intl?['c'].concat(t.kb):['k']}
+function bo(t,it){if(it.b==='x')return 'x';return t.intl?(it.b==='c'||t.kb.indexOf(it.b)>-1?it.b:'k'):'k'}
+function nm(t,b){if(b==='x')return '不需攜帶';if(b==='c')return '手提上機';if(!t.intl)return '行李';var n=t.kb.indexOf(b)+1;return t.kb.length>1?'託運行李 '+n:'託運行李'}
+function rows(t){return t.items.map(function(it){return{it:it,g:G(it.g)}}).filter(function(r){return r.g})}
+function tot(t,b){var s=0;rows(t).forEach(function(r){if(bo(t,r.it)===b)s+=r.g.w*r.it.q});return s}
+function rTrips(){var h=S.trips.map(function(t){var n=rows(t).filter(function(r){return bo(t,r.it)!=='x'}).length,w=0;wb(t).forEach(function(b){w+=tot(t,b)});return '<div class="tc"><button class="tcb" data-open="'+t.id+'"><b>'+esc(t.name)+'</b><span class="w">'+TY[t.type]+'・'+(t.intl?'出國':'國內')+'・'+n+' 件・'+kg(w)+'</span></button><button class="x" data-dt="'+t.id+'" aria-label="刪除行程">×</button></div>'}).join('');$('tlist').innerHTML=h||'<div class="empty">還沒有行程。輸入名稱並選類型，會先帶入你裝備總清單裡該類型的裝備，之後可以自己增減。</div>'}
+function gfilter(f,q){return S.gear.filter(function(g){return(f==='all'||g.t.indexOf(f)>-1)&&g.n.toLowerCase().indexOf(q)>-1})}
+function rGear(){var q=$('gs').value.trim().toLowerCase();
+$('gf').innerHTML=['all'].concat(TK).map(function(k){return '<button class="tab" data-gf="'+k+'" aria-selected="'+(S.gf===k)+'">'+(k==='all'?'全部':TY[k])+'</button>'}).join('');
+var L=gfilter(S.gf,q);
+$('glist').innerHTML=L.length?L.map(function(g){return '<div class="grow"><div class="l1"><input class="gi" value="'+esc(g.n)+'" data-gn="'+g.id+'" aria-label="裝備名稱"><span class="w"><input class="wi" type="number" min="0" step="10" value="'+g.w+'" data-gw="'+g.id+'" aria-label="重量(g)"> g</span><button class="x" data-dg="'+g.id+'" aria-label="刪除 '+esc(g.n)+'">×</button></div><div class="tags">'+TK.map(function(k){return '<button class="chip" data-tg="'+g.id+'|'+k+'" aria-pressed="'+(g.t.indexOf(k)>-1)+'">'+TY[k]+'</button>'}).join('')+'</div></div>'}).join(''):'<div class="empty">沒有符合的裝備。從上方新增。</div>';
+$('gcount').textContent='總清單共 '+S.gear.length+' 件，合計 '+kg(S.gear.reduce(function(s,g){return s+g.w},0))+'。標上類型的裝備，建立該類型行程時會自動帶入。'}
+function rPick(){var t=T();if(!t)return;var inT={};t.items.forEach(function(i){inT[i.g]=1});var L=gfilter($('pf').value,$('ps').value.trim().toLowerCase());
+$('plist').innerHTML=L.length?L.map(function(g){return '<label class="prow"><input type="checkbox" data-pk="'+g.id+'"'+(inT[g.id]?' checked':'')+'><span class="n">'+esc(g.n)+'</span><span class="w">'+g.w+' g</span></label>'}).join(''):'<div class="empty">沒有符合的裝備。到「裝備總清單」新增。</div>'}
+function rTrip(){var t=T();if(!t)return;$('tname').value=t.name;
+$('sw').innerHTML='<button data-i="1" aria-pressed="'+t.intl+'">出國（分手提／託運）</button><button data-i="0" aria-pressed="'+!t.intl+'">國內（單一行李）</button>';
+$('addbag').hidden=!t.intl;
+var bags=wb(t),all=bags.concat(['x']),R=rows(t);
+$('scales').innerHTML=bags.map(function(b){var w=tot(t,b),L=t.lim[b]||23,lim=L*1000,over=w>lim,pct=Math.min(100,w/lim*100);return '<div class="scale"><div class="top"><span class="name">'+nm(t,b)+(t.intl&&b!=='c'&&b!=='k'?' <button class="x" data-rb="'+b+'" aria-label="移除這個託運行李">×</button>':'')+'</span><span class="num">'+kg(w).replace(' kg','')+'<small> / '+L+' kg</small></span></div><div class="track"><div class="fill'+(over?' over':'')+'" style="width:'+pct+'%"></div></div><div class="msg'+(over?' over':'')+'">'+(over?'超重 '+kg(w-lim)+'，請移出一些物品':'還能再放 '+kg(lim-w))+'</div><label class="lim">限重 <input type="number" min="1" step="0.5" value="'+L+'" data-lim="'+b+'"> kg（依航空公司調整）</label></div>'}).join('');
+var html='';all.forEach(function(b){var g=R.filter(function(r){return bo(t,r.it)===b});
+if(t.intl||b==='x')html+='<div class="grp">'+nm(t,b)+(b==='x'?'・不計入重量':'')+'（'+g.length+' 件）</div>';
+html+=g.length?g.map(function(r){var it=r.it,gg=r.g;return '<div class="row'+(it.on?' done':'')+(b==='x'?' skip':'')+'"><input type="checkbox" data-c="'+gg.id+'"'+(it.on?' checked':'')+' aria-label="已打包 '+esc(gg.n)+'"><span class="n">'+esc(gg.n)+'</span><span class="w">×<input class="qi" type="number" min="1" step="1" value="'+it.q+'" data-q="'+gg.id+'" aria-label="數量"></span><span class="w"><input class="wi" type="number" min="0" step="10" value="'+gg.w+'" data-gw="'+gg.id+'" aria-label="單件重量(g)"> g</span><select class="chip" data-mv="'+gg.id+'" aria-label="移動 '+esc(gg.n)+' 到">'+all.map(function(x){return '<option value="'+x+'"'+(x===b?' selected':'')+'>'+nm(t,x)+'</option>'}).join('')+'</select><button class="x" data-dx="'+gg.id+'" aria-label="從行程移除 '+esc(gg.n)+'">×</button></div>'}).join(''):'<div class="empty">'+(b==='x'?'不想帶的裝備可用選單移到這裡，不計重量。':'這裡還沒有裝備，用上方「從裝備總清單加入」，或從其他行李移過來。')+'</div>'});
+$('items').innerHTML=html;
+var act=R.filter(function(r){return bo(t,r.it)!=='x'});
+$('icount').textContent='已打包 '+act.filter(function(r){return r.it.on}).length+' / '+act.length+'。單件重量修改後，總清單和其他行程也會一起更新。';
+rPick()}
+function render(){if(S.cur&&!T())S.cur=null;var inT=!!T();
+$('n_trips').setAttribute('aria-selected',String(!inT&&S.tab==='trips'));$('n_gear').setAttribute('aria-selected',String(!inT&&S.tab==='gear'));
+$('vTrips').hidden=inT||S.tab!=='trips';$('vGear').hidden=inT||S.tab!=='gear';$('vTrip').hidden=!inT;
+rTrips();rGear();rTrip();save()}
+function flash(t){$('tmsg').textContent=t}
+function itm(t,id){return t.items.filter(function(i){return i.g===id})[0]}
+document.addEventListener('click',function(e){var t=e.target.closest('[data-tab],[data-open],[data-dt],[data-back],[data-gf],[data-tg],[data-dg],[data-i],[data-rb],[data-dx]');if(!t)return;var d=t.dataset,tr=T();
+if(d.tab){S.tab=d.tab;S.cur=null}
+else if(d.open){S.cur=d.open}
+else if(d.dt){var x=S.trips.filter(function(a){return a.id===d.dt})[0];if(!confirm('刪除行程「'+x.name+'」？裝備總清單不受影響。'))return;S.trips=S.trips.filter(function(a){return a.id!==d.dt})}
+else if(d.back){S.cur=null}
+else if(d.gf){S.gf=d.gf}
+else if(d.tg){var p=d.tg.split('|'),g=G(p[0]),k=g.t.indexOf(p[1]);if(k>-1)g.t.splice(k,1);else g.t.push(p[1])}
+else if(d.dg){var g2=G(d.dg);if(!confirm('刪除「'+g2.n+'」？它也會從所有行程移除。'))return;S.gear=S.gear.filter(function(a){return a.id!==d.dg});S.trips.forEach(function(a){a.items=a.items.filter(function(i){return i.g!==d.dg})})}
+else if(d.i!==undefined){tr.intl=d.i==='1'}
+else if(d.rb){tr.kb=tr.kb.filter(function(k){return k!==d.rb});tr.items.forEach(function(i){if(i.b===d.rb)i.b='k'})}
+else if(d.dx){tr.items=tr.items.filter(function(i){return i.g!==d.dx})}
+render()});
+document.addEventListener('change',function(e){var t=e.target,d=t.dataset,tr=T();
+if(d.c){itm(tr,d.c).on=t.checked}
+else if(d.q){var q=parseInt(t.value,10);itm(tr,d.q).q=q>0?q:1}
+else if(d.gw){var v=parseFloat(t.value);if(v>=0)G(d.gw).w=v}
+else if(d.gn){var n=t.value.trim();if(n)G(d.gn).n=n}
+else if(d.mv){itm(tr,d.mv).b=t.value}
+else if(d.lim){var l=parseFloat(t.value);if(l>0)tr.lim[d.lim]=l}
+else if(d.pk){if(t.checked){if(!itm(tr,d.pk))tr.items.push({g:d.pk,q:1,b:'k',on:false})}else tr.items=tr.items.filter(function(i){return i.g!==d.pk})}
+else if(t.id==='tname'){tr.name=t.value.trim()||tr.name}
+else return;
+render()});
+$('addbag').onclick=function(){var t=T(),n=2;while(t.kb.indexOf('k'+n)>-1)n++;var id='k'+n;t.kb.push(id);t.lim[id]=t.lim.k||23;render()};
+$('tf').onsubmit=function(e){e.preventDefault();var ty=$('tp').value,t={id:uid(),name:$('tn').value.trim()||TY[ty]+'行程',type:ty,intl:$('io').value==='1',lim:{c:7,k:23},kb:['k'],items:[]};S.gear.forEach(function(g){if(g.t.indexOf(ty)>-1)t.items.push({g:g.id,q:1,b:'k',on:false})});S.trips.unshift(t);S.cur=t.id;e.target.reset();render()};
+$('gaf').onsubmit=function(e){e.preventDefault();var n=$('gn').value.trim(),w=parseFloat($('gw').value);if(!n||!(w>=0))return;var tg=[].slice.call(document.querySelectorAll('#gtags input:checked')).map(function(i){return i.value});S.gear.unshift({id:uid(),n:n,w:w,t:tg});e.target.reset();render()};
+$('gs').oninput=rGear;$('ps').oninput=rPick;$('pf').onchange=rPick;
+$('pall').onclick=function(){var t=T();gfilter($('pf').value,$('ps').value.trim().toLowerCase()).forEach(function(g){if(!itm(t,g.id))t.items.push({g:g.id,q:1,b:'k',on:false})});render()};
 function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function dec(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return JSON.parse(decodeURIComponent(escape(atob(s))))}
-document.getElementById('shr').onclick=function(){var u=location.href.split('#')[0]+'#d='+enc(S);if(navigator.share){navigator.share({title:'我的打包清單',url:u}).catch(function(){})}else if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){flash('已複製分享連結')},function(){flash(u)})}else flash(u)};
-(function(){var h=location.hash;if(h.indexOf('#d=')===0){try{var d=dec(h.slice(3));if(valid(d)&&confirm('收到一份分享的清單，要匯入嗎？這會取代這台裝置目前的清單。'))apply(d)}catch(x){}history.replaceState(null,'',location.pathname+location.search)}})();
+function gname(n){return S.gear.filter(function(x){return x.n===n})[0]}
+function mergeIn(d){var map={};d.gear.forEach(function(g){var e=gname(g.n);if(!e){e={id:uid(),n:g.n,w:g.w,t:g.t||[]};S.gear.push(e)}map[g.id]=e.id});var t=JSON.parse(JSON.stringify(d.trip));t.id=uid();t.items=t.items.filter(function(i){return map[i.g]}).map(function(i){i.g=map[i.g];return i});S.trips.unshift(t);S.cur=t.id;S.tab='trips';render()}
+$('shr').onclick=function(){var t=T(),ids={};t.items.forEach(function(i){ids[i.g]=1});var u=location.href.split('#')[0]+'#t='+enc({trip:t,gear:S.gear.filter(function(g){return ids[g.id]})});if(navigator.share){navigator.share({title:t.name,url:u}).catch(function(){})}else if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){flash('已複製分享連結')},function(){flash(u)})}else flash(u)};
+$('exp').onclick=function(){var b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='packing-backup.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);flash('已匯出備份檔 packing-backup.json')};
+$('imp').onclick=function(){$('impf').click()};
+$('impf').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);
+if(d.gear&&d.trips){if(!confirm('匯入會取代這台裝置目前的所有資料，確定嗎？'))return;S=d;S.cur=null;S.tab=S.tab||'trips';S.gf=S.gf||'all';flash('已匯入備份')}
+else if(d.lists){Object.keys(d.lists).forEach(function(k){d.lists[k].forEach(function(i){var g=gname(i.n);if(!g)S.gear.push({id:uid(),n:i.n,w:i.w,t:[k]});else if(g.t.indexOf(k)<0)g.t.push(k)})});flash('已把舊版清單轉入裝備總清單')}
+else throw 0;render()}catch(x){flash('這個檔案不是有效的備份檔')}};r.readAsText(f);e.target.value=''};
+$('tp').innerHTML=TK.map(function(k){return '<option value="'+k+'">'+TY[k]+'</option>'}).join('');
+$('pf').innerHTML='<option value="all">全部類型</option>'+TK.map(function(k){return '<option value="'+k+'">'+TY[k]+'</option>'}).join('');
+$('gtags').innerHTML=TK.map(function(k){return '<label class="chip"><input type="checkbox" value="'+k+'">'+TY[k]+'</label>'}).join('');
+render();
+(function(){var h=location.hash;if(h.indexOf('#t=')===0){try{var d=dec(h.slice(3));if(d.trip&&d.gear&&confirm('收到一份分享的行程，要加入嗎？'))mergeIn(d)}catch(x){}history.replaceState(null,'',location.pathname+location.search)}})();
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(function(){});
 </script>
 </body>
